@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>K9 ESPORTS - Rəsmi Səhifə</title>
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <style>
@@ -12,7 +11,6 @@
     body { background-color: #0a0a0a; color: #ffffff; overflow-x: hidden; min-height: 100vh; padding-bottom: 50px; }
     #bg-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
 
-    /* Splash Screen */
     #welcome-screen {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000000;
       display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999;
@@ -26,7 +24,6 @@
     @keyframes fadeInUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     @keyframes fadeOut { to { opacity: 0; visibility: hidden; } }
 
-    /* Adminlər Heyəti */
     .admin-team {
       max-width: 900px; margin: 30px auto; background: rgba(15, 15, 15, 0.9);
       border: 2px solid #ff003c; border-radius: 12px; padding: 25px; box-shadow: 0 0 20px rgba(255, 0, 60, 0.2);
@@ -39,7 +36,6 @@
     .tiktok-link:hover { background: #b3002a; }
     .thank-you-msg { text-align: center; margin-top: 20px; color: #aaa; font-style: italic; font-size: 0.9rem; border-top: 1px solid #333; padding-top: 10px; }
 
-    /* Nailiyyətlər */
     .achievements-section { max-width: 900px; margin: 30px auto; background: rgba(15, 15, 15, 0.9); border: 2px solid #ff003c; border-radius: 12px; padding: 20px; }
     .certificates-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-top: 15px; }
     .cert-card { border: 1px solid #333; border-radius: 8px; overflow: hidden; background: #111; text-align: center; transition: transform 0.2s, border-color 0.2s; }
@@ -47,22 +43,27 @@
     .cert-card img { width: 100%; height: 120px; object-fit: cover; display: block; }
     .cert-title { padding: 6px; font-size: 0.8rem; font-weight: 600; color: #ddd; background: #141414; }
 
-    /* Form & Status */
     .container { max-width: 700px; margin: 30px auto; background: rgba(15, 15, 15, 0.9); border: 2px solid #ff003c; border-radius: 12px; padding: 30px; box-shadow: 0 0 25px rgba(255, 0, 60, 0.3); }
     h1, h2 { text-align: center; color: #ff003c; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; }
     .form-group { margin-bottom: 18px; }
     label { display: block; margin-bottom: 6px; font-weight: 600; color: #ddd; }
     input, select, textarea { width: 100%; padding: 12px; background: #181818; border: 1px solid #333; border-radius: 6px; color: #fff; font-size: 1rem; }
     input:focus, select:focus, textarea:focus { outline: none; border-color: #ff003c; }
+
+    .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; background: #141414; padding: 12px; border-radius: 6px; border: 1px solid #333; }
+    .checkbox-item { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.95rem; }
+    .checkbox-item input { width: auto; cursor: pointer; }
+
+    .notif-btn-box { background: rgba(255, 0, 60, 0.15); border: 1px dashed #ff003c; border-radius: 8px; padding: 12px; margin-bottom: 20px; text-align: center; }
+    .btn-notif { background: #ff003c; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 6px; }
+
     .hidden { display: none !important; }
     .alert-warning { background: rgba(255, 0, 0, 0.2); color: #ff4d4d; border: 1px solid #ff003c; padding: 10px; border-radius: 6px; margin-top: 8px; font-size: 0.85rem; }
     .alert-success { background: rgba(0, 255, 0, 0.1); color: #2ed573; border: 1px solid #2ed573; padding: 10px; border-radius: 6px; margin-top: 8px; font-size: 0.85rem; }
     .btn-submit { width: 100%; padding: 14px; background: #ff003c; color: #fff; border: none; border-radius: 6px; font-size: 1.1rem; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
     .btn-submit:hover { background: #b3002a; }
 
-    .status-box {
-      margin-top: 25px; padding: 20px; border-radius: 8px; background: #141414; border: 2px dashed #ff003c; text-align: center;
-    }
+    .status-box { margin-top: 25px; padding: 20px; border-radius: 8px; background: #141414; border: 2px dashed #ff003c; text-align: center; }
     .status-title { font-size: 1.1rem; font-weight: bold; color: #ff003c; margin-bottom: 8px; }
     .status-badge { display: inline-block; padding: 6px 15px; border-radius: 20px; font-weight: bold; font-size: 0.95rem; margin-top: 5px; }
     .st-waiting { background: #eccc68; color: #000; }
@@ -74,14 +75,12 @@
 
   <canvas id="bg-canvas"></canvas>
 
-  <!-- Splash Screen -->
   <div id="welcome-screen">
     <img src="photo_2026-08-15_23-04-04.jpg" alt="K9 Logo" class="welcome-logo">
     <div class="logo-anim">K9 ESPORTS</div>
     <div class="welcome-text">Xoş gəlmisiniz!</div>
   </div>
 
-  <!-- Adminlər Heyəti -->
   <div class="admin-team">
     <h2>ADMİNLƏR HEYƏTİ</h2>
     <div class="admin-grid">
@@ -94,7 +93,6 @@
     <div class="thank-you-msg">Xidmətlərinə və K9 Esports-a göstərdikləri dəstəyə görə hər birinə dərindən təşəkkür edirik!</div>
   </div>
 
-  <!-- Nailiyyətlər -->
   <div class="achievements-section">
     <h2>NAİLİYYƏTLƏR VƏ SERTİFİKATLAR</h2>
     <div class="certificates-grid">
@@ -108,9 +106,14 @@
     </div>
   </div>
 
-  <!-- CV Formu -->
   <div class="container">
     <h1>K9 ESPORTS CV QEYDİYYATI</h1>
+
+    <div id="notifBox" class="notif-btn-box">
+      <div>🔔 Müraciətinizin cavabını canlı telefonda almaq üçün bildirişlərə icazə verin:</div>
+      <button type="button" id="btnAllowNotif" class="btn-notif">Bildirişlərə İcazə Ver</button>
+    </div>
+
     <form id="cvForm">
       <div class="form-group"><label for="fullName">Ad və Soyad:</label><input type="text" id="fullName" required placeholder="Əli Əliyev"></div>
       <div class="form-group"><label for="age">Yaşınız (Minimum 16):</label><input type="number" id="age" min="16" required placeholder="16"></div>
@@ -177,23 +180,23 @@
         </select>
       </div>
       <div class="form-group hidden" id="socialAccountGroup"><label for="socialAccount">Sosial Şəbəkə Hesabınız / Linkiniz:</label><input type="text" id="socialAccount" placeholder="@istifadəçi_adı və ya link"></div>
+      
       <div class="form-group">
-        <label for="tournaments">Hansı turnirlərdə / scrimlərdə iştirak etmisiniz?</label>
-        <select id="tournaments" required>
-          <option value="">Seçin...</option>
-          <option value="İştirak etməmişəm">İştirak etməmişəm</option>
-          <option value="Türk Scrimləri">Türk Scrimləri</option>
-          <option value="Avropa Scrimləri">Avropa Scrimləri</option>
-          <option value="1/12">1/12</option>
-          <option value="2/25">2/25</option>
-          <option value="10/100">10/100</option>
-          <option value="Niko Səviyyəli Turnir">Niko Səviyyəli Turnir</option>
-        </select>
+        <label>Hansı turnirlərdə / scrimlərdə iştirak etmisiniz? (Birdən çox seçə bilərsiniz):</label>
+        <div class="checkbox-grid">
+          <label class="checkbox-item"><input type="checkbox" name="tournaments" value="İştirak etməmişəm"> İştirak etməmişəm</label>
+          <label class="checkbox-item"><input type="checkbox" name="tournaments" value="Türk Scrimləri"> Türk Scrimləri</label>
+          <label class="checkbox-item"><input type="checkbox" name="tournaments" value="Avropa Scrimləri"> Avropa Scrimləri</label>
+          <label class="checkbox-item"><input type="checkbox" name="tournaments" value="1/12"> 1/12</label>
+          <label class="checkbox-item"><input type="checkbox" name="tournaments" value="2/25"> 2/25</label>
+          <label class="checkbox-item"><input type="checkbox" name="tournaments" value="10/100"> 10/100</label>
+          <label class="checkbox-item"><input type="checkbox" name="tournaments" value="Niko Səviyyəli Turnir"> Niko Səviyyəli Turnir</label>
+        </div>
       </div>
+
       <button type="submit" class="btn-submit">CV Göndər</button>
     </form>
 
-    <!-- Şəxsi CV Status Hissəsi -->
     <div id="userStatusBox" class="status-box hidden">
       <div class="status-title">MÜRACİƏTİNİZİN STATUSU</div>
       <div id="userStatusText" class="status-badge st-waiting">Gözləmədə...</div>
@@ -201,7 +204,6 @@
   </div>
 
   <script>
-    // Canvas Background
     const canvas = document.getElementById('bg-canvas');
     const ctx = canvas.getContext('2d');
     function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
@@ -224,7 +226,13 @@
     }
     animate();
 
-    // Form Interaktivliyi
+    // Service Worker Registration (Arxa fon bildirişi üçün)
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').then(reg => {
+        console.log('Service Worker qeydiyyatdan keçdi:', reg);
+      });
+    }
+
     const deviceTypeSelect = document.getElementById('deviceType');
     const fpsGroup = document.getElementById('fpsGroup');
     const fpsSelect = document.getElementById('fps');
@@ -242,26 +250,34 @@
     document.getElementById('achievements').addEventListener('change', function() { document.getElementById('achievementsTextGroup').classList.toggle('hidden', this.value !== 'Hə'); });
     document.getElementById('gameplayVideo').addEventListener('change', function() { document.getElementById('socialAccountGroup').classList.toggle('hidden', this.value !== 'Hə'); });
 
-    // FIREBASE INITIALIZATION
     const firebaseConfig = { databaseURL: "https://k9-esports-default-rtdb.firebaseio.com" };
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // Notification Permission
-    if ("Notification" in window) { Notification.requestPermission(); }
+    const btnAllowNotif = document.getElementById('btnAllowNotif');
+    if ("Notification" in window) {
+      if (Notification.permission === "granted") {
+        document.getElementById('notifBox').style.display = 'none';
+      }
+      btnAllowNotif.addEventListener('click', () => {
+        Notification.requestPermission().then(permission => {
+          if (permission === "granted") {
+            alert("Bildirişlər uğurla aktivləşdirildi!");
+            document.getElementById('notifBox').style.display = 'none';
+          }
+        });
+      });
+    }
 
-    // Unique Device ID Generator (İstifadəçiləri fərqləndirmək üçün)
     let deviceId = localStorage.getItem('k9_user_device_id');
     if (!deviceId) {
       deviceId = 'dev_' + Math.random().toString(36).substr(2, 9);
       localStorage.setItem('k9_user_device_id', deviceId);
     }
 
-    // İstifadəçinin Öz Müraciətini Dinlə
+    let lastKnownStatus = null;
     const userCvKey = localStorage.getItem('k9_my_cv_key');
-    if (userCvKey) {
-      trackMyCv(userCvKey);
-    }
+    if (userCvKey) { trackMyCv(userCvKey); }
 
     function trackMyCv(key) {
       document.getElementById('userStatusBox').classList.remove('hidden');
@@ -272,24 +288,29 @@
           statusText.innerText = data.status;
           statusText.className = 'status-badge ' + (data.status === 'Qəbul edildi' ? 'st-approved' : (data.status === 'Rədd edildi' ? 'st-rejected' : 'st-waiting'));
 
-          // Saytdan çıxsa belə Brauzer Bildirişi
-          if (data.status !== 'Gözləyir') {
-            if (Notification.permission === "granted") {
-              new Notification("K9 ESPORTS", {
-                body: `Müraciətiniz güncəlləndi: ${data.status}`,
-                icon: "photo_2026-08-15_23-04-04.jpg"
+          if (lastKnownStatus && lastKnownStatus !== data.status && data.status !== 'Gözləyir') {
+            if ("serviceWorker" in navigator && Notification.permission === "granted") {
+              navigator.serviceWorker.ready.then(registration => {
+                registration.showNotification("K9 ESPORTS CV CAVABI", {
+                  body: `Müraciətinizin cavabı: ${data.status.toUpperCase()}!`,
+                  icon: "photo_2026-08-15_23-04-04.jpg"
+                });
               });
             }
           }
+          lastKnownStatus = data.status;
         } else {
           document.getElementById('userStatusBox').classList.add('hidden');
         }
       });
     }
 
-    // Form Göndərmə
     document.getElementById('cvForm').addEventListener('submit', function(e) {
       e.preventDefault();
+
+      const selectedTournaments = Array.from(document.querySelectorAll('input[name="tournaments"]:checked')).map(cb => cb.value);
+      const tournamentResult = selectedTournaments.length > 0 ? selectedTournaments.join(', ') : 'Qeyd olunmayıb';
+
       const newRef = database.ref('applications').push();
       const cvData = {
         id: newRef.key,
@@ -309,11 +330,18 @@
         achievementsText: document.getElementById('achievementsText').value || '-',
         gameplayVideo: document.getElementById('gameplayVideo').value,
         socialAccount: document.getElementById('socialAccount').value || '-',
-        tournaments: document.getElementById('tournaments').value,
+        tournaments: tournamentResult,
         status: 'Gözləyir'
       };
 
       newRef.set(cvData).then(() => {
+        // Adminlərin telefonuna fon bildirişi düşməsi üçün siqnal göndərilir
+        database.ref('admin_notifications').push({
+          title: "YENİ CV MÜRACİƏTİ!",
+          body: `${cvData.fullName} yeni müraciət göndərdi.`,
+          time: Date.now()
+        });
+
         alert('UĞURLA GÖNDƏRİLDİ!');
         localStorage.setItem('k9_my_cv_key', newRef.key);
         document.getElementById('cvForm').reset();
