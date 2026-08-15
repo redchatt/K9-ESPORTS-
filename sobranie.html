@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>K9 ESPORTS - Admin Panel</title>
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <style>
@@ -42,7 +41,6 @@
     .hidden { display: none !important; }
     .alert-warning { background: rgba(255, 0, 0, 0.2); color: #ff4d4d; border: 1px solid #ff003c; padding: 10px; border-radius: 6px; margin-top: 8px; font-size: 0.85rem; }
 
-    /* Modal */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); display: flex; justify-content: center; align-items: center; z-index: 10000; }
     .modal-content { background: #141414; border: 2px solid #ff003c; border-radius: 12px; padding: 25px; max-width: 600px; width: 90%; max-height: 85vh; overflow-y: auto; position: relative; }
     .close-modal { position: absolute; top: 10px; right: 15px; font-size: 1.8rem; color: #ff003c; cursor: pointer; }
@@ -54,18 +52,21 @@
     .btn-status-approve { background: #2ed573; color: #000; font-weight: bold; border: none; padding: 10px; flex: 1; border-radius: 6px; cursor: pointer; }
     .btn-status-reject { background: #ff4757; color: #fff; font-weight: bold; border: none; padding: 10px; flex: 1; border-radius: 6px; cursor: pointer; }
 
-    #adminToast { position: fixed; top: 20px; right: 20px; background: #ff003c; color: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 0 20px #ff003c; z-index: 10001; display: none; font-weight: bold; }
+    .notif-btn-box { background: rgba(255, 0, 60, 0.15); border: 1px dashed #ff003c; border-radius: 8px; padding: 10px; margin-bottom: 15px; text-align: center; }
   </style>
 </head>
 <body>
 
   <canvas id="bg-canvas"></canvas>
-  <div id="adminToast">🔔 YENİ CV MÜRACİƏTİ GELDI!</div>
 
   <div class="admin-container">
     <h2>K9 ESPORTS ADMİN PANELİ</h2>
 
-    <!-- Login -->
+    <div id="notifBoxAdmin" class="notif-btn-box">
+      <span>🔔 Yeni CV-lər gələndə telefonda bildiriş almaq üçün: </span>
+      <button type="button" id="btnAdminNotif" class="btn-action" style="display:inline-block; width:auto; padding:5px 12px;">Bildirişləri Aktiv Et</button>
+    </div>
+
     <div id="adminLoginArea" class="login-box">
       <div class="form-group"><label>İstifadəçi Adı:</label><input type="text" id="adminUser" placeholder="İstifadəçi adı"></div>
       <div class="form-group"><label>Parol:</label><input type="password" id="adminPass" placeholder="Parol"></div>
@@ -73,7 +74,6 @@
       <div id="loginError" class="alert-warning hidden">Xətalı istifadəçi adı və ya parol!</div>
     </div>
 
-    <!-- Panel Content -->
     <div id="adminContentArea" class="hidden">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
         <h3>Müraciətlər (<span id="cvCount">0</span>)</h3>
@@ -98,7 +98,6 @@
     </div>
   </div>
 
-  <!-- Modal -->
   <div id="cvModal" class="modal-overlay hidden">
     <div class="modal-content">
       <span class="close-modal" id="btnCloseModal">&times;</span>
@@ -113,7 +112,6 @@
   </div>
 
   <script>
-    // Canvas Bg
     const canvas = document.getElementById('bg-canvas');
     const ctx = canvas.getContext('2d');
     function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
@@ -128,22 +126,29 @@
     }
     animate();
 
-    // Firebase
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+
+    const btnAdminNotif = document.getElementById('btnAdminNotif');
+    if ("Notification" in window) {
+      if (Notification.permission === "granted") {
+        document.getElementById('notifBoxAdmin').style.display = 'none';
+      }
+      btnAdminNotif.addEventListener('click', () => {
+        Notification.requestPermission().then(p => {
+          if (p === "granted") {
+            alert("Admin bildirişləri aktiv edildi!");
+            document.getElementById('notifBoxAdmin').style.display = 'none';
+          }
+        });
+      });
+    }
+
     const firebaseConfig = { databaseURL: "https://k9-esports-default-rtdb.firebaseio.com" };
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // Sound Notification
-    function playBeep() {
-      try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = audioCtx.createOscillator();
-        osc.type = 'sine'; osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-        osc.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.4);
-      } catch(e){}
-    }
-
-    // Login Auth
     document.getElementById('btnLogin').addEventListener('click', function() {
       const u = document.getElementById('adminUser').value.trim();
       const p = document.getElementById('adminPass').value.trim();
@@ -166,24 +171,32 @@
       document.getElementById('adminLoginArea').classList.add('hidden');
       document.getElementById('adminContentArea').classList.remove('hidden');
       loadLiveCvData();
+      listenForAdminNotifications();
+    }
+
+    // Adminlər üçün Canlı/Arxa Fon Bildirişi Dinləyicisi
+    function listenForAdminNotifications() {
+      database.ref('admin_notifications').limitToLast(1).on('child_added', (snapshot) => {
+        const notif = snapshot.val();
+        if (notif && (Date.now() - notif.time < 10000)) {
+          if ("serviceWorker" in navigator && Notification.permission === "granted") {
+            navigator.serviceWorker.ready.then(reg => {
+              reg.showNotification(notif.title, {
+                body: notif.body,
+                icon: "photo_2026-08-15_23-04-04.jpg"
+              });
+            });
+          }
+        }
+      });
     }
 
     let cvList = {};
-    let isFirstLoad = true;
-
     function loadLiveCvData() {
       database.ref('applications').on('value', (snapshot) => {
         cvList = snapshot.val() || {};
         const keys = Object.keys(cvList);
         document.getElementById('cvCount').innerText = keys.length;
-
-        if (!isFirstLoad) {
-          playBeep();
-          const toast = document.getElementById('adminToast');
-          toast.style.display = 'block';
-          setTimeout(() => { toast.style.display = 'none'; }, 4000);
-        }
-        isFirstLoad = false;
 
         const tbody = document.getElementById('adminTableBody');
         tbody.innerHTML = '';
@@ -241,7 +254,6 @@
     };
 
     document.getElementById('btnCloseModal').addEventListener('click', () => document.getElementById('cvModal').classList.add('hidden'));
-
     document.getElementById('btnApproveCv').addEventListener('click', () => setStatus('Qəbul edildi'));
     document.getElementById('btnRejectCv').addEventListener('click', () => setStatus('Rədd edildi'));
 
@@ -252,7 +264,6 @@
       }
     }
 
-    // MÜRACİƏTİ BAZADAN SİLMƏK ÜÇÜN FUNKSİYA
     window.delCv = function(key) {
       if (confirm('Bu müraciəti silməyə əminsiniz?')) {
         database.ref('applications/' + key).remove();
