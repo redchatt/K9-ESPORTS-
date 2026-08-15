@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>K9 ESPORTS - Admin Panel</title>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+    body { background-color: #0a0a0a; color: #fff; padding: 20px; min-height: 100vh; }
+    #bg-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+
+    .admin-container {
+      max-width: 1100px; margin: 40px auto; background: rgba(15, 15, 15, 0.95);
+      border: 2px solid #ff003c; border-radius: 12px; padding: 25px; box-shadow: 0 0 30px rgba(255, 0, 60, 0.3);
+    }
+    h2, h3 { text-align: center; color: #ff003c; margin-bottom: 20px; text-transform: uppercase; }
+
+    .login-box { max-width: 400px; margin: 20px auto; text-align: center; }
+    .form-group { margin-bottom: 15px; text-align: left; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    input { width: 100%; padding: 12px; background: #181818; border: 1px solid #333; border-radius: 6px; color: #fff; font-size: 1rem; }
+    
+    .btn-action { width: 100%; padding: 12px; background: #ff003c; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+    .btn-action:hover { background: #b3002a; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem; }
+    th, td { border: 1px solid #333; padding: 12px; text-align: center; }
+    th { background-color: #ff003c; color: #fff; }
+    tr:nth-child(even) { background-color: #141414; }
+
+    .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+    .badge-pending { background: #eccc68; color: #000; }
+    .badge-approved { background: #2ed573; color: #000; }
+    .badge-rejected { background: #ff4757; color: #fff; }
+
+    .btn-sm { padding: 6px 10px; font-size: 0.8rem; border-radius: 4px; border: none; cursor: pointer; color: #fff; margin: 2px; }
+    .btn-view { background: #2f3542; } .btn-del { background: #ff4757; }
+
+    .hidden { display: none !important; }
+    .alert-warning { background: rgba(255, 0, 0, 0.2); color: #ff4d4d; border: 1px solid #ff003c; padding: 10px; border-radius: 6px; margin-top: 8px; font-size: 0.85rem; }
+
+    /* Modal */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); display: flex; justify-content: center; align-items: center; z-index: 10000; }
+    .modal-content { background: #141414; border: 2px solid #ff003c; border-radius: 12px; padding: 25px; max-width: 600px; width: 90%; max-height: 85vh; overflow-y: auto; position: relative; }
+    .close-modal { position: absolute; top: 10px; right: 15px; font-size: 1.8rem; color: #ff003c; cursor: pointer; }
+    .cv-details-list { margin: 15px 0; text-align: left; line-height: 1.8; }
+    .cv-details-list strong { color: #ff003c; }
+
+    .reply-actions { display: flex; gap: 10px; margin-top: 15px; }
+    .btn-whatsapp { background: #25D366; color: #fff; text-decoration: none; text-align: center; flex: 1; padding: 10px; border-radius: 6px; font-weight: bold; }
+    .btn-status-approve { background: #2ed573; color: #000; font-weight: bold; border: none; padding: 10px; flex: 1; border-radius: 6px; cursor: pointer; }
+    .btn-status-reject { background: #ff4757; color: #fff; font-weight: bold; border: none; padding: 10px; flex: 1; border-radius: 6px; cursor: pointer; }
+
+    #adminToast { position: fixed; top: 20px; right: 20px; background: #ff003c; color: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 0 20px #ff003c; z-index: 10001; display: none; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <canvas id="bg-canvas"></canvas>
+  <div id="adminToast">🔔 YENİ CV MÜRACİƏTİ GELDI!</div>
+
+  <div class="admin-container">
+    <h2>K9 ESPORTS ADMİN PANELİ</h2>
+
+    <!-- Login -->
+    <div id="adminLoginArea" class="login-box">
+      <div class="form-group"><label>İstifadəçi Adı:</label><input type="text" id="adminUser" placeholder="İstifadəçi adı"></div>
+      <div class="form-group"><label>Parol:</label><input type="password" id="adminPass" placeholder="Parol"></div>
+      <button id="btnLogin" class="btn-action">Giriş Et</button>
+      <div id="loginError" class="alert-warning hidden">Xətalı istifadəçi adı və ya parol!</div>
+    </div>
+
+    <!-- Panel Content -->
+    <div id="adminContentArea" class="hidden">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3>Müraciətlər (<span id="cvCount">0</span>)</h3>
+        <button id="btnLogout" class="btn-sm btn-del" style="padding: 8px 15px;">Çıxış Et</button>
+      </div>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Tarix</th>
+              <th>Ad Soyad</th>
+              <th>Tel</th>
+              <th>Cihaz / FPS</th>
+              <th>Rol</th>
+              <th>Status</th>
+              <th>Əməliyyatlar</th>
+            </tr>
+          </thead>
+          <tbody id="adminTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="cvModal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <span class="close-modal" id="btnCloseModal">&times;</span>
+      <h2>CV TƏFƏRRÜATLARI</h2>
+      <div id="modalBody" class="cv-details-list"></div>
+      <div class="reply-actions"><a id="btnWhatsappLink" href="#" target="_blank" class="btn-whatsapp">💬 WhatsApp-da Yaz</a></div>
+      <div class="reply-actions" style="margin-top: 8px;">
+        <button id="btnApproveCv" class="btn-status-approve">✔ Qəbul Et</button>
+        <button id="btnRejectCv" class="btn-status-reject">✖ Rədd Et</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Canvas Bg
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    const particles = [];
+    for (let i = 0; i < 50; i++) { particles.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, radius: Math.random() * 2 + 1, speedX: (Math.random() - 0.5), speedY: (Math.random() - 0.5) }); }
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = '#ff003c';
+      particles.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill(); p.x += p.speedX; p.y += p.speedY; });
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    // Firebase
+    const firebaseConfig = { databaseURL: "https://k9-esports-default-rtdb.firebaseio.com" };
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // Sound Notification
+    function playBeep() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        osc.type = 'sine'; osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        osc.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+      } catch(e){}
+    }
+
+    // Login Auth
+    document.getElementById('btnLogin').addEventListener('click', function() {
+      const u = document.getElementById('adminUser').value.trim();
+      const p = document.getElementById('adminPass').value.trim();
+      if (u === 'K9ESCOBAR211_' && p === 'AA211_90') {
+        sessionStorage.setItem('k9_admin_logged', 'true');
+        showPanel();
+      } else {
+        document.getElementById('loginError').classList.remove('hidden');
+      }
+    });
+
+    document.getElementById('btnLogout').addEventListener('click', function() {
+      sessionStorage.removeItem('k9_admin_logged');
+      location.reload();
+    });
+
+    if (sessionStorage.getItem('k9_admin_logged') === 'true') { showPanel(); }
+
+    function showPanel() {
+      document.getElementById('adminLoginArea').classList.add('hidden');
+      document.getElementById('adminContentArea').classList.remove('hidden');
+      loadLiveCvData();
+    }
+
+    let cvList = {};
+    let isFirstLoad = true;
+
+    function loadLiveCvData() {
+      database.ref('applications').on('value', (snapshot) => {
+        cvList = snapshot.val() || {};
+        const keys = Object.keys(cvList);
+        document.getElementById('cvCount').innerText = keys.length;
+
+        if (!isFirstLoad) {
+          playBeep();
+          const toast = document.getElementById('adminToast');
+          toast.style.display = 'block';
+          setTimeout(() => { toast.style.display = 'none'; }, 4000);
+        }
+        isFirstLoad = false;
+
+        const tbody = document.getElementById('adminTableBody');
+        tbody.innerHTML = '';
+
+        if (keys.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7">Hələ müraciət yoxdur.</td></tr>';
+          return;
+        }
+
+        keys.reverse().forEach(key => {
+          const app = cvList[key];
+          let badgeClass = 'badge-pending';
+          if (app.status === 'Qəbul edildi') badgeClass = 'badge-approved';
+          if (app.status === 'Rədd edildi') badgeClass = 'badge-rejected';
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${app.date}</td>
+            <td><strong>${app.fullName}</strong></td>
+            <td>${app.phone}</td>
+            <td>${app.deviceType} (${app.fps})</td>
+            <td>${app.gameRole}</td>
+            <td><span class="badge ${badgeClass}">${app.status}</span></td>
+            <td>
+              <button class="btn-sm btn-view" onclick="openCv('${key}')">👁️ Bax</button>
+              <button class="btn-sm btn-del" onclick="delCv('${key}')">🗑️ Sil</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      });
+    }
+
+    let activeKey = null;
+    window.openCv = function(key) {
+      activeKey = key;
+      const app = cvList[key];
+      document.getElementById('modalBody').innerHTML = `
+        <p><strong>Ad Soyad:</strong> ${app.fullName}</p>
+        <p><strong>Yaş:</strong> ${app.age}</p>
+        <p><strong>Telefon:</strong> ${app.phone}</p>
+        <p><strong>Cihaz / Model:</strong> ${app.deviceType} - ${app.deviceName} (${app.fps})</p>
+        <p><strong>Rol:</strong> ${app.gameRole}</p>
+        <p><strong>İD Kart:</strong> ${app.idCard}</p>
+        <p><strong>Əvvəlki Ekip:</strong> ${app.prevEkip === 'Hə' ? app.ekipNames : 'Yox'}</p>
+        <p><strong>Nailiyyətlər:</strong> ${app.achievements === 'Hə' ? app.achievementsText : 'Yox'}</p>
+        <p><strong>Gameplay / Sosial:</strong> ${app.gameplayVideo === 'Hə' ? app.socialAccount : 'Yox'}</p>
+        <p><strong>Turnirlər:</strong> ${app.tournaments}</p>
+        <p><strong>Status:</strong> ${app.status}</p>
+      `;
+
+      const cleanPhone = app.phone.replace(/[^0-9]/g, '');
+      document.getElementById('btnWhatsappLink').href = `https://wa.me/${cleanPhone}?text=Salam%20${encodeURIComponent(app.fullName)},%20K9%20Esports-dan%20yazırıq...`;
+      document.getElementById('cvModal').classList.remove('hidden');
+    };
+
+    document.getElementById('btnCloseModal').addEventListener('click', () => document.getElementById('cvModal').classList.add('hidden'));
+
+    document.getElementById('btnApproveCv').addEventListener('click', () => setStatus('Qəbul edildi'));
+    document.getElementById('btnRejectCv').addEventListener('click', () => setStatus('Rədd edildi'));
+
+    function setStatus(st) {
+      if (activeKey) {
+        database.ref('applications/' + activeKey).update({ status: st });
+        document.getElementById('cvModal').classList.add('hidden');
+      }
+    }
+
+    window.delCv = function(key) {
+      if (confirm('Silməyə əminsiniz?')) {
+        database.ref('applications/' + key).remove();
+      }
+    };
+  </script>
+</body>
+</html>
