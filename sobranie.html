@@ -174,7 +174,6 @@
       listenForAdminNotifications();
     }
 
-    // Adminlər üçün Canlı/Arxa Fon Bildirişi Dinləyicisi
     function listenForAdminNotifications() {
       database.ref('admin_notifications').limitToLast(1).on('child_added', (snapshot) => {
         const notif = snapshot.val();
