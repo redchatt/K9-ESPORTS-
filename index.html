@@ -47,7 +47,7 @@
     .cert-card img { width: 100%; height: 120px; object-fit: cover; display: block; }
     .cert-title { padding: 6px; font-size: 0.8rem; font-weight: 600; color: #ddd; background: #141414; }
 
-    /* Form */
+    /* Form & Status */
     .container { max-width: 700px; margin: 30px auto; background: rgba(15, 15, 15, 0.9); border: 2px solid #ff003c; border-radius: 12px; padding: 30px; box-shadow: 0 0 25px rgba(255, 0, 60, 0.3); }
     h1, h2 { text-align: center; color: #ff003c; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; }
     .form-group { margin-bottom: 18px; }
@@ -59,6 +59,15 @@
     .alert-success { background: rgba(0, 255, 0, 0.1); color: #2ed573; border: 1px solid #2ed573; padding: 10px; border-radius: 6px; margin-top: 8px; font-size: 0.85rem; }
     .btn-submit { width: 100%; padding: 14px; background: #ff003c; color: #fff; border: none; border-radius: 6px; font-size: 1.1rem; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
     .btn-submit:hover { background: #b3002a; }
+
+    .status-box {
+      margin-top: 25px; padding: 20px; border-radius: 8px; background: #141414; border: 2px dashed #ff003c; text-align: center;
+    }
+    .status-title { font-size: 1.1rem; font-weight: bold; color: #ff003c; margin-bottom: 8px; }
+    .status-badge { display: inline-block; padding: 6px 15px; border-radius: 20px; font-weight: bold; font-size: 0.95rem; margin-top: 5px; }
+    .st-waiting { background: #eccc68; color: #000; }
+    .st-approved { background: #2ed573; color: #000; }
+    .st-rejected { background: #ff4757; color: #fff; }
   </style>
 </head>
 <body>
@@ -183,6 +192,12 @@
       </div>
       <button type="submit" class="btn-submit">CV Göndər</button>
     </form>
+
+    <!-- Şəxsi CV Status Hissəsi -->
+    <div id="userStatusBox" class="status-box hidden">
+      <div class="status-title">MÜRACİƏTİNİZİN STATUSU</div>
+      <div id="userStatusText" class="status-badge st-waiting">Gözləmədə...</div>
+    </div>
   </div>
 
   <script>
@@ -235,12 +250,50 @@
     // Notification Permission
     if ("Notification" in window) { Notification.requestPermission(); }
 
+    // Unique Device ID Generator (İstifadəçiləri fərqləndirmək üçün)
+    let deviceId = localStorage.getItem('k9_user_device_id');
+    if (!deviceId) {
+      deviceId = 'dev_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('k9_user_device_id', deviceId);
+    }
+
+    // İstifadəçinin Öz Müraciətini Dinlə
+    const userCvKey = localStorage.getItem('k9_my_cv_key');
+    if (userCvKey) {
+      trackMyCv(userCvKey);
+    }
+
+    function trackMyCv(key) {
+      document.getElementById('userStatusBox').classList.remove('hidden');
+      database.ref('applications/' + key).on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          const statusText = document.getElementById('userStatusText');
+          statusText.innerText = data.status;
+          statusText.className = 'status-badge ' + (data.status === 'Qəbul edildi' ? 'st-approved' : (data.status === 'Rədd edildi' ? 'st-rejected' : 'st-waiting'));
+
+          // Saytdan çıxsa belə Brauzer Bildirişi
+          if (data.status !== 'Gözləyir') {
+            if (Notification.permission === "granted") {
+              new Notification("K9 ESPORTS", {
+                body: `Müraciətiniz güncəlləndi: ${data.status}`,
+                icon: "photo_2026-08-15_23-04-04.jpg"
+              });
+            }
+          }
+        } else {
+          document.getElementById('userStatusBox').classList.add('hidden');
+        }
+      });
+    }
+
     // Form Göndərmə
     document.getElementById('cvForm').addEventListener('submit', function(e) {
       e.preventDefault();
       const newRef = database.ref('applications').push();
       const cvData = {
         id: newRef.key,
+        deviceId: deviceId,
         date: new Date().toLocaleDateString('az-AZ'),
         fullName: document.getElementById('fullName').value,
         age: document.getElementById('age').value,
@@ -261,21 +314,10 @@
       };
 
       newRef.set(cvData).then(() => {
-        alert('CV-niz uğurla bazaya göndərildi!');
+        alert('UĞURLA GÖNDƏRİLDİ!');
+        localStorage.setItem('k9_my_cv_key', newRef.key);
         document.getElementById('cvForm').reset();
-        
-        // Admin cavab verəndə canlı bildiriş
-        database.ref('applications/' + newRef.key).on('value', (snapshot) => {
-          const updated = snapshot.val();
-          if (updated && updated.status !== 'Gözləyir') {
-            if (Notification.permission === "granted") {
-              new Notification("K9 ESPORTS", {
-                body: `Müraciətinizin statusu yeniləndi: ${updated.status}`,
-                icon: "photo_2026-08-15_23-04-04.jpg"
-              });
-            }
-          }
-        });
+        trackMyCv(newRef.key);
       });
     });
   </script>
