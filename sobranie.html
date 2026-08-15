@@ -252,8 +252,9 @@
       }
     }
 
+    // MÜRACİƏTİ BAZADAN SİLMƏK ÜÇÜN FUNKSİYA
     window.delCv = function(key) {
-      if (confirm('Silməyə əminsiniz?')) {
+      if (confirm('Bu müraciəti silməyə əminsiniz?')) {
         database.ref('applications/' + key).remove();
       }
     };
