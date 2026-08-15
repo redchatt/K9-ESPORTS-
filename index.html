@@ -226,7 +226,6 @@
     }
     animate();
 
-    // Service Worker Registration (Arxa fon bildirişi üçün)
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').then(reg => {
         console.log('Service Worker qeydiyyatdan keçdi:', reg);
@@ -335,7 +334,6 @@
       };
 
       newRef.set(cvData).then(() => {
-        // Adminlərin telefonuna fon bildirişi düşməsi üçün siqnal göndərilir
         database.ref('admin_notifications').push({
           title: "YENİ CV MÜRACİƏTİ!",
           body: `${cvData.fullName} yeni müraciət göndərdi.`,
