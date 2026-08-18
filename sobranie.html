@@ -91,7 +91,7 @@
               <th>Cihaz / FPS</th>
               <th>Rol</th>
               <th>Status</th>
-              <th>Qəbul Edən</th>
+              <th>Yoxlayan Admin</th>
               <th>Əməliyyatlar</th>
             </tr>
           </thead>
@@ -227,6 +227,7 @@
 
           const fpsNum = parseInt(app.fps) || 0;
           const isLowFps = fpsNum < 60;
+          const reviewer = app.reviewedBy || app.acceptedBy || '-';
 
           const tr = document.createElement('tr');
           tr.innerHTML = `
@@ -238,7 +239,7 @@
             </td>
             <td>${app.gameRole}</td>
             <td><span class="badge ${badgeClass}">${app.status}</span></td>
-            <td><strong style="color: #eccc68;">${app.acceptedBy || '-'}</strong></td>
+            <td><strong style="color: #eccc68;">${reviewer}</strong></td>
             <td>
               <button class="btn-sm btn-view" onclick="openCv('${key}')">👁️ Bax</button>
               <button class="btn-sm btn-del" onclick="delCv('${key}')">🗑️ Sil</button>
@@ -255,6 +256,7 @@
       const app = cvList[key];
       const fpsNum = parseInt(app.fps) || 0;
       const isLowFps = fpsNum < 60;
+      const reviewer = app.reviewedBy || app.acceptedBy || '-';
 
       document.getElementById('modalBody').innerHTML = `
         <p><strong>Ad Soyad:</strong> ${app.fullName}</p>
@@ -268,7 +270,7 @@
         <p><strong>Gameplay / Sosial:</strong> ${app.gameplayVideo === 'Hə' ? app.socialAccount : 'Yox'}</p>
         <p><strong>Turnirlər:</strong> ${app.tournaments}</p>
         <p><strong>Status:</strong> ${app.status}</p>
-        <p><strong>Qəbul Edən Admin:</strong> ${app.acceptedBy || '-'}</p>
+        <p><strong>Yoxlayan Admin:</strong> ${reviewer}</p>
       `;
 
       // Avto-Filtr: FPS 60-dan aşağıdırsa "Qəbul et" düyməsini ləğv et
@@ -295,14 +297,16 @@
     });
 
     document.getElementById('btnRejectCv').addEventListener('click', () => {
-      setStatus('Rədd edildi', '-');
+      const selectedAdmin = document.getElementById('selectAdminName').value;
+      setStatus('Rədd edildi', selectedAdmin);
     });
 
     function setStatus(st, adminName) {
       if (activeKey) {
         database.ref('applications/' + activeKey).update({ 
           status: st,
-          acceptedBy: adminName || '-'
+          reviewedBy: adminName,
+          acceptedBy: adminName
         });
         document.getElementById('cvModal').classList.add('hidden');
       }
