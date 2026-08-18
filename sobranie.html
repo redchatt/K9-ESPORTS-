@@ -20,7 +20,7 @@
     .login-box { max-width: 400px; margin: 20px auto; text-align: center; }
     .form-group { margin-bottom: 15px; text-align: left; }
     label { display: block; margin-bottom: 5px; font-weight: bold; }
-    input { width: 100%; padding: 12px; background: #181818; border: 1px solid #333; border-radius: 6px; color: #fff; font-size: 1rem; }
+    input, select { width: 100%; padding: 12px; background: #181818; border: 1px solid #333; border-radius: 6px; color: #fff; font-size: 1rem; }
     
     .btn-action { width: 100%; padding: 12px; background: #ff003c; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
     .btn-action:hover { background: #b3002a; }
@@ -47,11 +47,13 @@
     .cv-details-list { margin: 15px 0; text-align: left; line-height: 1.8; }
     .cv-details-list strong { color: #ff003c; }
 
-    .reply-actions { display: flex; gap: 10px; margin-top: 15px; }
-    .btn-whatsapp { background: #25D366; color: #fff; text-decoration: none; text-align: center; flex: 1; padding: 10px; border-radius: 6px; font-weight: bold; }
+    .reply-actions { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+    .btn-whatsapp { background: #25D366; color: #fff; text-decoration: none; text-align: center; flex: 1; padding: 10px; border-radius: 6px; font-weight: bold; min-width: 100%; }
     .btn-status-approve { background: #2ed573; color: #000; font-weight: bold; border: none; padding: 10px; flex: 1; border-radius: 6px; cursor: pointer; }
+    .btn-status-approve:disabled { background: #555 !important; color: #888 !important; cursor: not-allowed; opacity: 0.6; }
     .btn-status-reject { background: #ff4757; color: #fff; font-weight: bold; border: none; padding: 10px; flex: 1; border-radius: 6px; cursor: pointer; }
 
+    .admin-select-box { background: #181818; border: 1px solid #ff003c; color: #fff; padding: 10px; border-radius: 6px; font-weight: bold; flex: 1; }
     .notif-btn-box { background: rgba(255, 0, 60, 0.15); border: 1px dashed #ff003c; border-radius: 8px; padding: 10px; margin-bottom: 15px; text-align: center; }
   </style>
 </head>
@@ -89,6 +91,7 @@
               <th>Cihaz / FPS</th>
               <th>Rol</th>
               <th>Status</th>
+              <th>Qəbul Edən</th>
               <th>Əməliyyatlar</th>
             </tr>
           </thead>
@@ -103,10 +106,21 @@
       <span class="close-modal" id="btnCloseModal">&times;</span>
       <h2>CV TƏFƏRRÜATLARI</h2>
       <div id="modalBody" class="cv-details-list"></div>
+      
       <div class="reply-actions"><a id="btnWhatsappLink" href="#" target="_blank" class="btn-whatsapp">💬 WhatsApp-da Yaz</a></div>
-      <div class="reply-actions" style="margin-top: 8px;">
+      
+      <!-- Admin Seçimi və Qəbul / Rədd Düymələri -->
+      <div class="reply-actions" style="margin-top: 12px;">
+        <select id="selectAdminName" class="admin-select-box">
+          <option value="A.Osmanov">Admin: A.Osmanov</option>
+          <option value="R.Alıyev">Admin: R.Alıyev</option>
+          <option value="R.Hacıyev">Admin: R.Hacıyev</option>
+        </select>
         <button id="btnApproveCv" class="btn-status-approve">✔ Qəbul Et</button>
         <button id="btnRejectCv" class="btn-status-reject">✖ Rədd Et</button>
+      </div>
+      <div id="fpsWarning" class="alert-warning hidden" style="text-align: center; margin-top: 10px;">
+        ⚠️ Oyunçunun FPS dəyəri 60-dan aşağı olduğu üçün qəbul etmək olmaz!
       </div>
     </div>
   </div>
@@ -201,7 +215,7 @@
         tbody.innerHTML = '';
 
         if (keys.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="7">Hələ müraciət yoxdur.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="8">Hələ müraciət yoxdur.</td></tr>';
           return;
         }
 
@@ -211,14 +225,20 @@
           if (app.status === 'Qəbul edildi') badgeClass = 'badge-approved';
           if (app.status === 'Rədd edildi') badgeClass = 'badge-rejected';
 
+          const fpsNum = parseInt(app.fps) || 0;
+          const isLowFps = fpsNum < 60;
+
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td>${app.date}</td>
+            <td>${app.date || '-'}</td>
             <td><strong>${app.fullName}</strong></td>
             <td>${app.phone}</td>
-            <td>${app.deviceType} (${app.fps})</td>
+            <td style="${isLowFps ? 'color: #ff4757; font-weight: bold;' : ''}">
+              ${app.deviceType} (${app.fps}) ${isLowFps ? '<br><small>(Aşağı)</small>' : ''}
+            </td>
             <td>${app.gameRole}</td>
             <td><span class="badge ${badgeClass}">${app.status}</span></td>
+            <td><strong style="color: #eccc68;">${app.acceptedBy || '-'}</strong></td>
             <td>
               <button class="btn-sm btn-view" onclick="openCv('${key}')">👁️ Bax</button>
               <button class="btn-sm btn-del" onclick="delCv('${key}')">🗑️ Sil</button>
@@ -233,6 +253,9 @@
     window.openCv = function(key) {
       activeKey = key;
       const app = cvList[key];
+      const fpsNum = parseInt(app.fps) || 0;
+      const isLowFps = fpsNum < 60;
+
       document.getElementById('modalBody').innerHTML = `
         <p><strong>Ad Soyad:</strong> ${app.fullName}</p>
         <p><strong>Yaş:</strong> ${app.age}</p>
@@ -245,7 +268,19 @@
         <p><strong>Gameplay / Sosial:</strong> ${app.gameplayVideo === 'Hə' ? app.socialAccount : 'Yox'}</p>
         <p><strong>Turnirlər:</strong> ${app.tournaments}</p>
         <p><strong>Status:</strong> ${app.status}</p>
+        <p><strong>Qəbul Edən Admin:</strong> ${app.acceptedBy || '-'}</p>
       `;
+
+      // Avto-Filtr: FPS 60-dan aşağıdırsa "Qəbul et" düyməsini ləğv et
+      const btnApprove = document.getElementById('btnApproveCv');
+      const fpsWarn = document.getElementById('fpsWarning');
+      if (isLowFps) {
+        btnApprove.disabled = true;
+        fpsWarn.classList.remove('hidden');
+      } else {
+        btnApprove.disabled = false;
+        fpsWarn.classList.add('hidden');
+      }
 
       const cleanPhone = app.phone.replace(/[^0-9]/g, '');
       document.getElementById('btnWhatsappLink').href = `https://wa.me/${cleanPhone}?text=Salam%20${encodeURIComponent(app.fullName)},%20K9%20Esports-dan%20yazırıq...`;
@@ -253,12 +288,22 @@
     };
 
     document.getElementById('btnCloseModal').addEventListener('click', () => document.getElementById('cvModal').classList.add('hidden'));
-    document.getElementById('btnApproveCv').addEventListener('click', () => setStatus('Qəbul edildi'));
-    document.getElementById('btnRejectCv').addEventListener('click', () => setStatus('Rədd edildi'));
+    
+    document.getElementById('btnApproveCv').addEventListener('click', () => {
+      const selectedAdmin = document.getElementById('selectAdminName').value;
+      setStatus('Qəbul edildi', selectedAdmin);
+    });
 
-    function setStatus(st) {
+    document.getElementById('btnRejectCv').addEventListener('click', () => {
+      setStatus('Rədd edildi', '-');
+    });
+
+    function setStatus(st, adminName) {
       if (activeKey) {
-        database.ref('applications/' + activeKey).update({ status: st });
+        database.ref('applications/' + activeKey).update({ 
+          status: st,
+          acceptedBy: adminName || '-'
+        });
         document.getElementById('cvModal').classList.add('hidden');
       }
     }
