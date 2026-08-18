@@ -69,6 +69,30 @@
     .st-waiting { background: #eccc68; color: #000; }
     .st-approved { background: #2ed573; color: #000; }
     .st-rejected { background: #ff4757; color: #fff; }
+
+    /* Sabit WhatsApp Düyməsi */
+    .whatsapp-btn-float {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #25d366;
+      color: #fff;
+      border-radius: 50px;
+      padding: 12px 20px;
+      font-weight: bold;
+      text-decoration: none;
+      box-shadow: 0 4px 15px rgba(37, 211, 102, 0.5);
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.95rem;
+      transition: transform 0.3s ease;
+    }
+    .whatsapp-btn-float:hover {
+      transform: scale(1.08);
+      background-color: #20ba5a;
+    }
   </style>
 </head>
 <body>
@@ -213,6 +237,11 @@
     </div>
   </div>
 
+  <!-- Sabit WhatsApp Düyməsi -->
+  <a href="https://wa.me/905305686595" target="_blank" class="whatsapp-btn-float">
+    💬 Bizimlə Əlaqə
+  </a>
+
   <script>
     const canvas = document.getElementById('bg-canvas');
     const ctx = canvas.getContext('2d');
@@ -321,7 +350,15 @@
         const data = snapshot.val();
         if (data) {
           const statusText = document.getElementById('userStatusText');
-          statusText.innerText = data.status;
+          
+          let displayStatus = data.status;
+          const adminName = data.reviewedBy || data.acceptedBy;
+          
+          if (adminName && adminName !== '-' && data.status !== 'Gözləyir') {
+            displayStatus += ` (${adminName})`;
+          }
+
+          statusText.innerText = displayStatus;
           statusText.className = 'status-badge ' + (data.status === 'Qəbul edildi' ? 'st-approved' : (data.status === 'Rədd edildi' ? 'st-rejected' : 'st-waiting'));
 
           if (lastKnownStatus && lastKnownStatus !== data.status && data.status !== 'Gözləyir') {
