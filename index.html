@@ -127,7 +127,17 @@
         </select>
       </div>
       <div class="form-group"><label for="deviceName">Cihazın Tam Adı (Modeli):</label><input type="text" id="deviceName" required placeholder="iPhone 13 Pro / Poco F3"></div>
-      <div class="form-group hidden" id="fpsGroup"><label for="fps">FPS Məhsuldarlığı:</label><select id="fps"></select></div>
+      
+      <div class="form-group hidden" id="fpsGroup">
+        <label for="fps">FPS Məhsuldarlığı:</label>
+        <select id="fps" required></select>
+      </div>
+      
+      <div class="form-group hidden" id="customFpsGroup">
+        <label for="customFps">Xüsusi FPS Dəyərinizi Qeyd Edin:</label>
+        <input type="number" id="customFps" placeholder="Məsələn: 30, 45, 144" min="1" max="300">
+      </div>
+
       <div class="form-group">
         <label for="gameRole">Oyunda Rolunuz:</label>
         <select id="gameRole" required>
@@ -235,12 +245,39 @@
     const deviceTypeSelect = document.getElementById('deviceType');
     const fpsGroup = document.getElementById('fpsGroup');
     const fpsSelect = document.getElementById('fps');
+    const customFpsGroup = document.getElementById('customFpsGroup');
+    const customFpsInput = document.getElementById('customFps');
+
     deviceTypeSelect.addEventListener('change', function() {
       fpsSelect.innerHTML = '<option value="">Seçin...</option>';
-      if (this.value === 'Android') { fpsGroup.classList.remove('hidden'); [90, 120].forEach(fps => fpsSelect.innerHTML += `<option value="${fps}">${fps} FPS</option>`); }
-      else if (this.value === 'iOS') { fpsGroup.classList.remove('hidden'); [60, 90, 120].forEach(fps => fpsSelect.innerHTML += `<option value="${fps}">${fps} FPS</option>`); }
-      else { fpsGroup.classList.add('hidden'); }
+      customFpsGroup.classList.add('hidden');
+      customFpsInput.value = '';
+
+      if (this.value === 'Android') {
+        fpsGroup.classList.remove('hidden');
+        [90, 120].forEach(fps => fpsSelect.innerHTML += `<option value="${fps}">${fps} FPS</option>`);
+        fpsSelect.innerHTML += `<option value="custom">Digər (Özün daxil et)</option>`;
+      } 
+      else if (this.value === 'iOS') {
+        fpsGroup.classList.remove('hidden');
+        [60, 90, 120].forEach(fps => fpsSelect.innerHTML += `<option value="${fps}">${fps} FPS</option>`);
+        fpsSelect.innerHTML += `<option value="custom">Digər (Özün daxil et)</option>`;
+      } 
+      else {
+        fpsGroup.classList.add('hidden');
+      }
     });
+
+    fpsSelect.addEventListener('change', function() {
+      if (this.value === 'custom') {
+        customFpsGroup.classList.remove('hidden');
+        customFpsInput.required = true;
+      } else {
+        customFpsGroup.classList.add('hidden');
+        customFpsInput.required = false;
+      }
+    });
+
     document.getElementById('idCard').addEventListener('change', function() {
       document.getElementById('idWarningNo').classList.toggle('hidden', this.value !== 'Yoxdur');
       document.getElementById('idWarningYes').classList.toggle('hidden', this.value !== 'Var');
@@ -307,6 +344,26 @@
     document.getElementById('cvForm').addEventListener('submit', function(e) {
       e.preventDefault();
 
+      const devType = deviceTypeSelect.value;
+      const selectedFpsOption = fpsSelect.value;
+      let finalFpsValue = 0;
+
+      if (selectedFpsOption === 'custom') {
+        finalFpsValue = parseInt(customFpsInput.value) || 0;
+      } else {
+        finalFpsValue = parseInt(selectedFpsOption) || 0;
+      }
+
+      if (devType === 'Android' && finalFpsValue < 90) {
+        alert("⚠️ TƏLƏB OLUNAN FPS ÇATMIR!\n\nAndroid cihazlar üçün tələb olunan minimum FPS: 90 FPS-dir. Daxil etdiyiniz FPS göstəricisi ilə müraciət göndərilə bilməz!");
+        return;
+      }
+
+      if (devType === 'iOS' && finalFpsValue < 60) {
+        alert("⚠️ TƏLƏB OLUNAN FPS ÇATMIR!\n\niOS cihazlar üçün tələb olunan minimum FPS: 60 FPS-dir. Daxil etdiyiniz FPS göstəricisi ilə müraciət göndərilə bilməz!");
+        return;
+      }
+
       const selectedTournaments = Array.from(document.querySelectorAll('input[name="tournaments"]:checked')).map(cb => cb.value);
       const tournamentResult = selectedTournaments.length > 0 ? selectedTournaments.join(', ') : 'Qeyd olunmayıb';
 
@@ -318,9 +375,9 @@
         fullName: document.getElementById('fullName').value,
         age: document.getElementById('age').value,
         phone: document.getElementById('phone').value,
-        deviceType: document.getElementById('deviceType').value,
+        deviceType: devType,
         deviceName: document.getElementById('deviceName').value,
-        fps: document.getElementById('fps').value || 'Məlum deyil',
+        fps: finalFpsValue + ' FPS',
         gameRole: document.getElementById('gameRole').value,
         idCard: document.getElementById('idCard').value,
         prevEkip: document.getElementById('prevEkip').value,
@@ -343,6 +400,8 @@
         alert('UĞURLA GÖNDƏRİLDİ!');
         localStorage.setItem('k9_my_cv_key', newRef.key);
         document.getElementById('cvForm').reset();
+        fpsGroup.classList.add('hidden');
+        customFpsGroup.classList.add('hidden');
         trackMyCv(newRef.key);
       });
     });
