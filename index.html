@@ -70,29 +70,13 @@
     .st-approved { background: #2ed573; color: #000; }
     .st-rejected { background: #ff4757; color: #fff; }
 
-    /* Sabit WhatsApp Düyməsi */
     .whatsapp-btn-float {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background-color: #25d366;
-      color: #fff;
-      border-radius: 50px;
-      padding: 12px 20px;
-      font-weight: bold;
-      text-decoration: none;
-      box-shadow: 0 4px 15px rgba(37, 211, 102, 0.5);
-      z-index: 999;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.95rem;
-      transition: transform 0.3s ease;
+      position: fixed; bottom: 20px; right: 20px; background-color: #25d366; color: #fff;
+      border-radius: 50px; padding: 12px 20px; font-weight: bold; text-decoration: none;
+      box-shadow: 0 4px 15px rgba(37, 211, 102, 0.5); z-index: 999; display: flex; align-items: center;
+      gap: 8px; font-size: 0.95rem; transition: transform 0.3s ease;
     }
-    .whatsapp-btn-float:hover {
-      transform: scale(1.08);
-      background-color: #20ba5a;
-    }
+    .whatsapp-btn-float:hover { transform: scale(1.08); background-color: #20ba5a; }
   </style>
 </head>
 <body>
@@ -227,7 +211,7 @@
         </div>
       </div>
 
-      <button type="submit" class="btn-submit">CV Göndər</button>
+      <button type="submit" class="btn-submit" id="submitBtn">CV Göndər</button>
     </form>
 
     <div id="userStatusBox" class="status-box hidden">
@@ -236,10 +220,7 @@
     </div>
   </div>
 
-  <!-- Sabit WhatsApp Düyməsi -->
-  <a href="https://wa.me/905305686595" target="_blank" class="whatsapp-btn-float">
-    💬 Bizimlə Əlaqə
-  </a>
+  <a href="https://wa.me/905305686595" target="_blank" class="whatsapp-btn-float">💬 Bizimlə Əlaqə</a>
 
   <script>
     const canvas = document.getElementById('bg-canvas');
@@ -265,9 +246,7 @@
     animate();
 
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').then(reg => {
-        console.log('Service Worker qeydiyyatdan keçdi:', reg);
-      }).catch(err => console.log(err));
+      navigator.serviceWorker.register('sw.js').catch(err => console.log(err));
     }
 
     const deviceTypeSelect = document.getElementById('deviceType');
@@ -312,8 +291,11 @@
     document.getElementById('achievements').addEventListener('change', function() { document.getElementById('achievementsTextGroup').classList.toggle('hidden', this.value !== 'Hə'); });
     document.getElementById('gameplayVideo').addEventListener('change', function() { document.getElementById('socialAccountGroup').classList.toggle('hidden', this.value !== 'Hə'); });
 
+    // Firebase konfiqurasiyası
     const firebaseConfig = { databaseURL: "https://k9-esports-default-rtdb.firebaseio.com" };
-    firebase.initializeApp(firebaseConfig);
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
     const database = firebase.database();
 
     const btnAllowNotif = document.getElementById('btnAllowNotif');
@@ -347,99 +329,119 @@
         const data = snapshot.val();
         if (data) {
           const statusText = document.getElementById('userStatusText');
-          
-          let displayStatus = data.status;
+          let displayStatus = data.status || 'Gözləyir';
           const adminName = data.reviewedBy || data.acceptedBy;
           
-          if (adminName && adminName !== '-' && data.status !== 'Gözləyir') {
+          if (adminName && adminName !== '-' && displayStatus !== 'Gözləyir') {
             displayStatus += ` (${adminName})`;
           }
 
           statusText.innerText = displayStatus;
-          statusText.className = 'status-badge ' + (data.status === 'Qəbul edildi' ? 'st-approved' : (data.status === 'Rədd edildi' ? 'st-rejected' : 'st-waiting'));
+          statusText.className = 'status-badge ' + (displayStatus.includes('Qəbul') ? 'st-approved' : (displayStatus.includes('Rədd') ? 'st-rejected' : 'st-waiting'));
 
-          if (lastKnownStatus && lastKnownStatus !== data.status && data.status !== 'Gözləyir') {
+          if (lastKnownStatus && lastKnownStatus !== displayStatus && displayStatus !== 'Gözləyir') {
             if ("serviceWorker" in navigator && Notification.permission === "granted") {
               navigator.serviceWorker.ready.then(registration => {
                 registration.showNotification("K9 ESPORTS CV CAVABI", {
-                  body: `Müraciətinizin cavabı: ${data.status.toUpperCase()}!`,
+                  body: `Müraciətinizin cavabı: ${displayStatus.toUpperCase()}!`,
                   icon: "photo_2026-08-15_23-04-04.jpg"
                 });
               });
             }
           }
-          lastKnownStatus = data.status;
+          lastKnownStatus = displayStatus;
         } else {
           document.getElementById('userStatusBox').classList.add('hidden');
         }
       });
     }
 
+    // GÖNDƏRMƏ KODU
     document.getElementById('cvForm').addEventListener('submit', function(e) {
       e.preventDefault();
 
-      const devType = deviceTypeSelect.value;
-      const selectedFpsOption = fpsSelect.value;
-      let finalFpsValue = 0;
+      try {
+        const devType = deviceTypeSelect.value;
+        const selectedFpsOption = fpsSelect.value;
+        let finalFpsValue = 0;
 
-      if (selectedFpsOption === 'custom') {
-        finalFpsValue = parseInt(customFpsInput.value) || 0;
-      } else {
-        finalFpsValue = parseInt(selectedFpsOption) || 0;
-      }
+        if (devType && !selectedFpsOption) {
+          alert("Xahiş olunur FPS dəyərini seçin!");
+          return;
+        }
 
-      if (devType === 'Android' && finalFpsValue < 90) {
-        alert("⚠️ TƏLƏB OLUNAN FPS ÇATMIR!\n\nAndroid cihazlar üçün tələb olunan minimum FPS: 90 FPS-dir.");
-        return;
-      }
+        if (selectedFpsOption === 'custom') {
+          finalFpsValue = parseInt(customFpsInput.value) || 0;
+        } else {
+          finalFpsValue = parseInt(selectedFpsOption) || 0;
+        }
 
-      if (devType === 'iOS' && finalFpsValue < 60) {
-        alert("⚠️ TƏLƏB OLUNAN FPS ÇATMIR!\n\niOS cihazlar üçün tələb olunan minimum FPS: 60 FPS-dir.");
-        return;
-      }
+        if (devType === 'Android' && finalFpsValue < 90) {
+          alert("⚠️ TƏLƏB OLUNAN FPS ÇATMIR!\n\nAndroid cihazlar üçün tələb olunan minimum FPS: 90 FPS-dir.");
+          return;
+        }
 
-      const selectedTournaments = Array.from(document.querySelectorAll('input[name="tournaments"]:checked')).map(cb => cb.value);
-      const tournamentResult = selectedTournaments.length > 0 ? selectedTournaments.join(', ') : 'Qeyd olunmayıb';
+        if (devType === 'iOS' && finalFpsValue < 60) {
+          alert("⚠️ TƏLƏB OLUNAN FPS ÇATMIR!\n\niOS cihazlar üçün tələb olunan minimum FPS: 60 FPS-dir.");
+          return;
+        }
 
-      const newRef = database.ref('applications').push();
-      const cvData = {
-        id: newRef.key,
-        deviceId: deviceId,
-        date: new Date().toLocaleDateString('az-AZ'),
-        fullName: document.getElementById('fullName').value,
-        age: document.getElementById('age').value,
-        phone: document.getElementById('phone').value,
-        deviceType: devType || '-',
-        deviceName: document.getElementById('deviceName').value,
-        fps: finalFpsValue ? finalFpsValue + ' FPS' : '-',
-        gameRole: document.getElementById('gameRole').value,
-        idCard: document.getElementById('idCard').value,
-        prevEkip: document.getElementById('prevEkip').value,
-        ekipNames: document.getElementById('ekipNames').value || '-',
-        achievements: document.getElementById('achievements').value,
-        achievementsText: document.getElementById('achievementsText').value || '-',
-        gameplayVideo: document.getElementById('gameplayVideo').value,
-        socialAccount: document.getElementById('socialAccount').value || '-',
-        tournaments: tournamentResult,
-        status: 'Gözləyir'
-      };
+        const selectedTournaments = Array.from(document.querySelectorAll('input[name="tournaments"]:checked')).map(cb => cb.value);
+        const tournamentResult = selectedTournaments.length > 0 ? selectedTournaments.join(', ') : 'Qeyd olunmayıb';
 
-      newRef.set(cvData).then(() => {
-        database.ref('admin_notifications').push({
-          title: "YENİ CV MÜRACİƏTİ!",
-          body: `${cvData.fullName} yeni müraciət göndərdi.`,
-          time: Date.now()
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.innerText = "GÖNDƏRİLİR...";
+
+        const newRef = database.ref('applications').push();
+        const cvData = {
+          id: newRef.key,
+          deviceId: deviceId,
+          date: new Date().toLocaleDateString('az-AZ'),
+          fullName: document.getElementById('fullName').value || '-',
+          age: document.getElementById('age').value || '-',
+          phone: document.getElementById('phone').value || '-',
+          deviceType: devType || '-',
+          deviceName: document.getElementById('deviceName').value || '-',
+          fps: finalFpsValue ? finalFpsValue + ' FPS' : '-',
+          gameRole: document.getElementById('gameRole').value || '-',
+          idCard: document.getElementById('idCard').value || '-',
+          prevEkip: document.getElementById('prevEkip').value || '-',
+          ekipNames: document.getElementById('ekipNames').value || '-',
+          achievements: document.getElementById('achievements').value || '-',
+          achievementsText: document.getElementById('achievementsText').value || '-',
+          gameplayVideo: document.getElementById('gameplayVideo').value || '-',
+          socialAccount: document.getElementById('socialAccount').value || '-',
+          tournaments: tournamentResult,
+          status: 'Gözləyir'
+        };
+
+        newRef.set(cvData).then(() => {
+          database.ref('admin_notifications').push({
+            title: "YENİ CV MÜRACİƏTİ!",
+            body: `${cvData.fullName} yeni müraciət göndərdi.`,
+            time: Date.now()
+          });
+
+          alert('UĞURLA GÖNDƏRİLDİ!');
+          localStorage.setItem('k9_my_cv_key', newRef.key);
+          document.getElementById('cvForm').reset();
+          fpsGroup.classList.add('hidden');
+          customFpsGroup.classList.add('hidden');
+          submitBtn.disabled = false;
+          submitBtn.innerText = "CV GÖNDƏR";
+          trackMyCv(newRef.key);
+        }).catch(err => {
+          submitBtn.disabled = false;
+          submitBtn.innerText = "CV GÖNDƏR";
+          alert("Firebase xətası: " + err.message + "\n\n(Qeyd: Firebase Realtime Database Rules bölməsində '.write': true olduğuna əmin olun)");
         });
 
-        alert('UĞURLA GÖNDƏRİLDİ!');
-        localStorage.setItem('k9_my_cv_key', newRef.key);
-        document.getElementById('cvForm').reset();
-        fpsGroup.classList.add('hidden');
-        customFpsGroup.classList.add('hidden');
-        trackMyCv(newRef.key);
-      }).catch(err => {
-        alert("Xəta baş verdi: " + err.message);
-      });
+      } catch (error) {
+        document.getElementById('submitBtn').disabled = false;
+        document.getElementById('submitBtn').innerText = "CV GÖNDƏR";
+        alert("Sistemdə xəta yarandı: " + error.message);
+      }
     });
   </script>
 </body>
