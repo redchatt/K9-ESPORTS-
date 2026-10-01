@@ -77,11 +77,45 @@
       gap: 8px; font-size: 0.95rem; transition: transform 0.3s ease;
     }
     .whatsapp-btn-float:hover { transform: scale(1.08); background-color: #20ba5a; }
+
+    /* K9 Esports Xüsusi Modal / Popup */
+    .k9-modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px);
+      display: flex; justify-content: center; align-items: center;
+      z-index: 10000; opacity: 0; visibility: hidden; transition: all 0.3s ease;
+    }
+    .k9-modal-overlay.active { opacity: 1; visibility: visible; }
+    .k9-modal-box {
+      background: #111111; border: 2px solid #ff003c; border-radius: 12px;
+      padding: 30px; width: 90%; max-width: 420px; text-align: center;
+      box-shadow: 0 0 30px rgba(255, 0, 60, 0.4); transform: scale(0.8); transition: transform 0.3s ease;
+    }
+    .k9-modal-overlay.active .k9-modal-box { transform: scale(1); }
+    .k9-modal-icon { font-size: 3rem; margin-bottom: 10px; }
+    .k9-modal-title { font-size: 1.4rem; font-weight: 900; color: #ff003c; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px; }
+    .k9-modal-desc { font-size: 0.95rem; color: #ddd; line-height: 1.5; margin-bottom: 20px; white-space: pre-line; }
+    .k9-modal-btn {
+      background: #ff003c; color: #ffffff; border: none; padding: 12px 30px;
+      border-radius: 6px; font-weight: bold; font-size: 1rem; cursor: pointer;
+      text-transform: uppercase; transition: background 0.3s ease;
+    }
+    .k9-modal-btn:hover { background: #b3002a; }
   </style>
 </head>
 <body>
 
   <canvas id="bg-canvas"></canvas>
+
+  <!-- K9 Xüsusi Popup Modal -->
+  <div id="k9Modal" class="k9-modal-overlay">
+    <div class="k9-modal-box">
+      <div id="k9ModalIcon" class="k9-modal-icon">🔥</div>
+      <div id="k9ModalTitle" class="k9-modal-title">BİLDİRİŞ</div>
+      <div id="k9ModalDesc" class="k9-modal-desc">Məlumat mesajı</div>
+      <button type="button" class="k9-modal-btn" onclick="closeK9Modal()">MƏLUMATLANDIM</button>
+    </div>
+  </div>
 
   <div id="welcome-screen">
     <img src="photo_2026-08-15_23-04-04.jpg" alt="K9 Logo" class="welcome-logo">
@@ -223,6 +257,18 @@
   <a href="https://wa.me/905305686595" target="_blank" class="whatsapp-btn-float">💬 Bizimlə Əlaqə</a>
 
   <script>
+    // Xüsusi Modal Bildiriş Funksiyası
+    function showK9Modal(title, text, icon = '🔥') {
+      document.getElementById('k9ModalTitle').innerText = title;
+      document.getElementById('k9ModalDesc').innerText = text;
+      document.getElementById('k9ModalIcon').innerText = icon;
+      document.getElementById('k9Modal').classList.add('active');
+    }
+
+    function closeK9Modal() {
+      document.getElementById('k9Modal').classList.remove('active');
+    }
+
     const canvas = document.getElementById('bg-canvas');
     const ctx = canvas.getContext('2d');
     function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
@@ -291,7 +337,7 @@
     document.getElementById('achievements').addEventListener('change', function() { document.getElementById('achievementsTextGroup').classList.toggle('hidden', this.value !== 'Hə'); });
     document.getElementById('gameplayVideo').addEventListener('change', function() { document.getElementById('socialAccountGroup').classList.toggle('hidden', this.value !== 'Hə'); });
 
-    // Firebase konfiqurasiyası (YENİLƏNDİ)
+    // Firebase konfiqurasiyası
     const firebaseConfig = { databaseURL: "https://k9esportss-66b95-default-rtdb.firebaseio.com/" };
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
@@ -306,7 +352,7 @@
       btnAllowNotif.addEventListener('click', () => {
         Notification.requestPermission().then(permission => {
           if (permission === "granted") {
-            alert("Bildirişlər uğurla aktivləşdirildi!");
+            showK9Modal("BİLDİRİŞLƏR", "Bildirişlər uğurla aktivləşdirildi!", "🔔");
             document.getElementById('notifBox').style.display = 'none';
           }
         });
@@ -366,7 +412,7 @@
         let finalFpsValue = 0;
 
         if (devType && !selectedFpsOption) {
-          alert("Xahiş olunur FPS dəyərini seçin!");
+          showK9Modal("XƏTA", "Xahiş olunur FPS dəyərini seçin!", "⚠️");
           return;
         }
 
@@ -377,12 +423,12 @@
         }
 
         if (devType === 'Android' && finalFpsValue < 90) {
-          alert("⚠️ TƏLƏB OLUNAN FPS ÇATMIR!\n\nAndroid cihazlar üçün tələb olunan minimum FPS: 90 FPS-dir.");
+          showK9Modal("TƏLƏB MƏHDUDİYYƏTİ", "Android cihazlar üçün tələb olunan minimum FPS: 90 FPS-dir.", "⚠️");
           return;
         }
 
         if (devType === 'iOS' && finalFpsValue < 60) {
-          alert("⚠️ TƏLƏB OLUNAN FPS ÇATMIR!\n\niOS cihazlar üçün tələb olunan minimum FPS: 60 FPS-dir.");
+          showK9Modal("TƏLƏB MƏHDUDİYYƏTİ", "iOS cihazlar üçün tələb olunan minimum FPS: 60 FPS-dir.", "⚠️");
           return;
         }
 
@@ -423,7 +469,7 @@
             time: Date.now()
           });
 
-          alert('UĞURLA GÖNDƏRİLDİ!');
+          showK9Modal("UĞURLU MÜRACİƏT", "Müraciətiniz uğurla göndərildi! Adminlərimiz qısa zamanda CV-nizi dəyərləndirəcək.", "✅");
           localStorage.setItem('k9_my_cv_key', newRef.key);
           document.getElementById('cvForm').reset();
           fpsGroup.classList.add('hidden');
@@ -434,13 +480,13 @@
         }).catch(err => {
           submitBtn.disabled = false;
           submitBtn.innerText = "CV GÖNDƏR";
-          alert("Firebase xətası: " + err.message + "\n\n(Qeyd: Firebase Realtime Database Rules bölməsində '.write': true olduğuna əmin olun)");
+          showK9Modal("FİREBASE XƏTASI", err.message + "\n\n(Qeyd: Firebase Realtime Database Rules bölməsində '.write': true olduğuna əmin olun)", "❌");
         });
 
       } catch (error) {
         document.getElementById('submitBtn').disabled = false;
         document.getElementById('submitBtn').innerText = "CV GÖNDƏR";
-        alert("Sistemdə xəta yarandı: " + error.message);
+        showK9Modal("SİSTEM XƏTASI", error.message, "❌");
       }
     });
   </script>
