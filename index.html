@@ -291,8 +291,8 @@
     document.getElementById('achievements').addEventListener('change', function() { document.getElementById('achievementsTextGroup').classList.toggle('hidden', this.value !== 'Hə'); });
     document.getElementById('gameplayVideo').addEventListener('change', function() { document.getElementById('socialAccountGroup').classList.toggle('hidden', this.value !== 'Hə'); });
 
-    // Firebase konfiqurasiyası
-    const firebaseConfig = { databaseURL: "https://k9-esports-default-rtdb.firebaseio.com" };
+    // Firebase konfiqurasiyası (YENİLƏNDİ)
+    const firebaseConfig = { databaseURL: "https://k9esportss-66b95-default-rtdb.firebaseio.com/" };
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
     }
