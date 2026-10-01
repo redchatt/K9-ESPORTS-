@@ -153,7 +153,7 @@
       
       <div class="form-group hidden" id="fpsGroup">
         <label for="fps">FPS Məhsuldarlığı:</label>
-        <select id="fps" required></select>
+        <select id="fps"></select>
       </div>
       
       <div class="form-group hidden" id="customFpsGroup">
@@ -267,7 +267,7 @@
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').then(reg => {
         console.log('Service Worker qeydiyyatdan keçdi:', reg);
-      });
+      }).catch(err => console.log(err));
     }
 
     const deviceTypeSelect = document.getElementById('deviceType');
@@ -299,10 +299,8 @@
     fpsSelect.addEventListener('change', function() {
       if (this.value === 'custom') {
         customFpsGroup.classList.remove('hidden');
-        customFpsInput.required = true;
       } else {
         customFpsGroup.classList.add('hidden');
-        customFpsInput.required = false;
       }
     });
 
@@ -391,12 +389,12 @@
       }
 
       if (devType === 'Android' && finalFpsValue < 90) {
-        alert("⚠️ TƏLƏB OLUNAN FPS ÇATMIR!\n\nAndroid cihazlar üçün tələb olunan minimum FPS: 90 FPS-dir. Daxil etdiyiniz FPS göstəricisi ilə müraciət göndərilə bilməz!");
+        alert("⚠️ TƏLƏB OLUNAN FPS ÇATMIR!\n\nAndroid cihazlar üçün tələb olunan minimum FPS: 90 FPS-dir.");
         return;
       }
 
       if (devType === 'iOS' && finalFpsValue < 60) {
-        alert("⚠️ TƏLƏB OLUNAN FPS ÇATMIR!\n\niOS cihazlar üçün tələb olunan minimum FPS: 60 FPS-dir. Daxil etdiyiniz FPS göstəricisi ilə müraciət göndərilə bilməz!");
+        alert("⚠️ TƏLƏB OLUNAN FPS ÇATMIR!\n\niOS cihazlar üçün tələb olunan minimum FPS: 60 FPS-dir.");
         return;
       }
 
@@ -411,9 +409,9 @@
         fullName: document.getElementById('fullName').value,
         age: document.getElementById('age').value,
         phone: document.getElementById('phone').value,
-        deviceType: devType,
+        deviceType: devType || '-',
         deviceName: document.getElementById('deviceName').value,
-        fps: finalFpsValue + ' FPS',
+        fps: finalFpsValue ? finalFpsValue + ' FPS' : '-',
         gameRole: document.getElementById('gameRole').value,
         idCard: document.getElementById('idCard').value,
         prevEkip: document.getElementById('prevEkip').value,
@@ -439,6 +437,8 @@
         fpsGroup.classList.add('hidden');
         customFpsGroup.classList.add('hidden');
         trackMyCv(newRef.key);
+      }).catch(err => {
+        alert("Xəta baş verdi: " + err.message);
       });
     });
   </script>
